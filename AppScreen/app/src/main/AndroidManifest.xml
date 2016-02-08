@@ -33,9 +33,25 @@
         <activity android:name=".Media.VideoPlay"
             android:label="@string/mediaView"
             android:parentActivityName=".Login"/>
+
+        <!--<receiver android:name=".Registration$IncomingSms">-->
+            <!--<intent-filter>-->
+                <!--<action android:name="android.provider.Telephony.SMS_RECEIVED" />-->
+                <!--&lt;!&ndash;<action android:name="my.action.string" />&ndash;&gt;-->
+            <!--</intent-filter>-->
+        <!--</receiver>-->
+
+        <receiver android:name=".IncomingSms" android:enabled="true">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SMS_RECEIVED"/>
+            </intent-filter>
+        </receiver>
     </application>
     <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.RECEIVE_SMS"/>
+    <uses-permission android:name="android.permission.READ_SMS" />
+
 
 </manifest>

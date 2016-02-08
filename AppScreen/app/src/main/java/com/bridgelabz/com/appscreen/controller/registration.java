@@ -26,4 +26,9 @@ public class registration {
             return false;
         }
     }
+
+    public static void verifyOtp()
+    {
+
+    }
 }

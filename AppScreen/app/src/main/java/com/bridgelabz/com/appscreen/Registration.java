@@ -1,12 +1,14 @@
 package com.bridgelabz.com.appscreen;
 
-import android.app.NotificationManager;
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.app.NotificationCompat;
 import android.telephony.SmsManager;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -25,14 +27,18 @@ import static com.bridgelabz.com.appscreen.controller.registration.verifyNumber;
  */
 public class Registration extends AppCompatActivity
 {
+    public static Registration instance;
     TextView message1,message2;
     EditText phone_number,code1;
     Spinner spinner;
-    Button registration;
+    Button registration,verify;
     String message;
     String phoneNo;
+    Context context;
+    int code = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        instance=this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.registration);
         registration=(Button)findViewById(R.id.Registration);
@@ -47,14 +53,14 @@ public class Registration extends AppCompatActivity
         message2.setText("Please confirm your country code and enter mobile number.");
 
         Random ran=new Random();
-        final int code= (100000 + ran.nextInt(900000));
+        code= (100000 + ran.nextInt(900000));
 
         message="Your number is verified. You have successfully registered shopping pad app. Your one time number is "+code;
 
-//        TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-//        final String phone = tm.getLine1Number();
-//
-//        phoneNo=phone;
+        TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        final String phone = tm.getLine1Number();
+
+        //phoneNo=phone;
 
 
         final ArrayAdapter<CharSequence> adapter=ArrayAdapter.createFromResource(this, R.array.country, R.layout.spinner_item);
@@ -154,6 +160,8 @@ public class Registration extends AppCompatActivity
                 if(res == true)
                 {
                     Toast.makeText(getApplicationContext(),"Done here",Toast.LENGTH_SHORT).show();
+                    new ProgressTask(Registration.this).execute();
+                    //SendSMS();
                 }
             }
         });
@@ -181,16 +189,84 @@ public class Registration extends AppCompatActivity
 //            }
 //        });
     }
-//    private void SendSMS()
-//    {
-//        try {
-//            SmsManager smsManager = SmsManager.getDefault();
-//            smsManager.sendTextMessage(phoneNo, null, message, null, null);
-//            Toast.makeText(getApplicationContext(), "SMS sent.", Toast.LENGTH_LONG).show();
-//        }
-//        catch (Exception e) {
-//            Toast.makeText(getApplicationContext(), "SMS failed, please try again.", Toast.LENGTH_LONG).show();
-//            e.printStackTrace();
-//        }
-//    }
+    public Registration getInstance()
+    {
+        return instance;
+    }
+    private void SendSMS()
+    {
+        try {
+            SmsManager smsManager = SmsManager.getDefault();
+            smsManager.sendTextMessage(phoneNo, null, message, null, null);
+
+            Intent intent=new Intent("android.provider.Telephony.SMS_RECEIVED");
+            intent.putExtra("pdus", message);
+            sendBroadcast(intent);
+            Log.e("Send sms","Send sms");
+
+            Toast.makeText(getApplicationContext(), "SMS sent.", Toast.LENGTH_SHORT).show();
+        }
+        catch (Exception e) {
+            Toast.makeText(getApplicationContext(), "SMS failed, please try again.", Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
+        }
+    }
+    public void updateTheTextView(final String t) {
+        setContentView(R.layout.received_otp);
+        Registration.this.runOnUiThread(new Runnable() {
+            public void run() {
+                EditText textV1 = (EditText) findViewById(R.id.OTP);
+                textV1.setText("" + t);
+                textV1.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+            }
+        });
+
+        verify=(Button)findViewById(R.id.verify);
+
+        verify.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(getApplicationContext(), Login.class));
+            }
+        });
+    }
+
+    public class ProgressTask extends AsyncTask<Void,Void,Void>
+    {
+        public ProgressDialog dialog;
+        public ProgressTask(Registration registration)
+        {
+            context=registration;
+            dialog=new ProgressDialog(context);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            this.dialog.setMessage("Sending SMS");
+            this.dialog.setMax(20);
+            this.dialog.setProgress(0);
+            this.dialog.show();
+            //super.onPreExecute();
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            try
+            {
+                SendSMS();
+            }
+            catch (Exception e)
+            {
+
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            if(dialog.isShowing())
+                dialog.dismiss();
+            //super.onPostExecute(aVoid);
+        }
+    }
 }
